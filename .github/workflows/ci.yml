@@ -1,0 +1,89 @@
+name: Belajar Ceria CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    name: Build the APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-34 build-tools;34.0.0
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Release build
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+      - name: Name the APK
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk belajar-ceria.apk
+          echo "APK: $(( $(stat -c %s belajar-ceria.apk) / 1024 )) KB"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: belajar-ceria-apk
+          path: belajar-ceria.apk
+
+  screenshots:
+    name: Run it on an emulator
+    needs: apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write # to publish the screenshots on their own branch
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: belajar-ceria-apk
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Open every screen, then play every game on a recording
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: false
+          script: |
+            sh tools/screenshots.sh belajar-ceria.apk shots
+            timeout 1500 python3 -u tools/playtest.py shots/playtest
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: belajar-ceria-screenshots
+          path: shots/
+      - name: Publish the screenshots and the APK on the kids-learn-screenshots branch
+        if: always()
+        continue-on-error: true # a nice-to-have: never fails the build
+        run: |
+          cd shots
+          cp ../belajar-ceria.apk . 2>/dev/null || true
+          git init -q -b kids-learn-screenshots
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Screenshots of ${GITHUB_SHA::7}"
+          for try in 1 2 3; do
+            git -c http.postBuffer=52428800 push -q -f \
+              "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:kids-learn-screenshots \
+              && exit 0
+            sleep $((try * 10))
+          done
+          exit 1
