@@ -89,6 +89,12 @@ public final class MainActivity extends Activity {
      */
     private void open(String path) {
         try {
+            if ("home".equals(path)) return;
+            if ("guide".equals(path)) {
+                lastNav = 0;
+                push(new GuideScreen(this));
+                return;
+            }
             if (path.startsWith("zh")) {
                 // "zh" opens Cakap Mandarin; "zh,3" goes straight to level 4 (public speaking)
                 String[] p = path.split(",");

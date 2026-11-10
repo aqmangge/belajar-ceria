@@ -93,6 +93,12 @@ def check(name, ok, detail=""):
     print(("  PASS " if ok else "  FAIL ") + name + (f"  ({detail})" if detail else ""))
 
 
+def ensure_home():
+    time.sleep(1)
+    if find("Mula Belajar", exact=True):
+        tap("Mula Belajar", 3)
+
+
 def play_learn():
     print("Learn: swipe through the flash cards")
     tap("Learn", 3)
@@ -394,6 +400,7 @@ def play_mandarin():
     check("Mandarin: the speech ends with applause", any(e.startswith("zh stage applause") for e in ev))
     sh(f"am start -S -W -n {PKG}/.MainActivity")
     time.sleep(3)
+    ensure_home()
 
 
 def record(name):
@@ -417,7 +424,8 @@ def main():
     sh("settings put secure immersive_mode_confirmations confirmed")
     adb("logcat", "-c")
     sh(f"am start -S -W -n {PKG}/.MainActivity")
-    time.sleep(6)
+    time.sleep(5)
+    ensure_home()
     rec = record("playtest")
     time.sleep(2)
     shot("p0-home")

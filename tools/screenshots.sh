@@ -32,7 +32,9 @@ shot() {
   echo "saved $out/$1.png"
 }
 
-shot 01-home ""
+shot 00-splash ""
+shot 00b-guide "guide"
+shot 01-home "home"
 shot 02-abc "0"
 shot 03-abc-learn "0,0"
 shot 03x-abc-learn-x "0,0,23"
