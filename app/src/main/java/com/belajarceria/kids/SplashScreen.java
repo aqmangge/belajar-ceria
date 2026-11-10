@@ -93,7 +93,7 @@ final class SplashScreen extends Screen {
         start.setContentDescription("Mula Belajar");
         Ui.press(start, () -> {
             Sfx.tada();
-            act.push(new HomeScreen(act));
+            act.replace(new HomeScreen(act));
         });
         actions.addView(start, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
         startBtn = start;
@@ -149,7 +149,7 @@ final class SplashScreen extends Screen {
         if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER
                 || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
             Sfx.tada();
-            act.push(new HomeScreen(act));
+            act.replace(new HomeScreen(act));
             return true;
         }
         return false;

@@ -168,13 +168,29 @@ public final class MainActivity extends Activity {
         logViewsSoon();
     }
 
+    void replace(Screen s) {
+        if (!stack.isEmpty()) {
+            final Screen old = stack.remove(stack.size() - 1);
+            old.onHidden();
+            Spring.of(old, View.ALPHA).config(300f, 1f).then(() -> host.removeView(old)).to(0f);
+        }
+        lastNav = 0;
+        push(s);
+    }
+
     /** Switches the whole app to another theme: the home screen is rebuilt in its colours and fades in. */
     void switchTheme(Theme t) {
-        if (t == Theme.current || stack.size() != 1) return;
+        if (t == Theme.current) return;
+        if (stack.isEmpty()) return;
+        int topIdx = stack.size() - 1;
+        Screen top = stack.get(topIdx);
+        if (!(top instanceof HomeScreen)) return;
+
+        log("switch theme " + t.id);
         Theme.save(this, t);
-        final Screen old = stack.remove(0);
-        old.onHidden();
-        Spring.of(old, View.ALPHA).config(400f, 1f).then(() -> host.removeView(old)).to(0f);
+        stack.remove(topIdx);
+        top.onHidden();
+        Spring.of(top, View.ALPHA).config(400f, 1f).then(() -> host.removeView(top)).to(0f);
         lastNav = 0;
         push(new HomeScreen(this));
         confetti.burst(confetti.getWidth() / 2f, confetti.getHeight() * 0.3f, 50);
